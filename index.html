@@ -1,0 +1,1411 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#1a2744">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.json">
+<title>Linge Hôtel — OCR</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#1a2744;--navy-dark:#111b33;--gold:#c9a84c;--gold-light:#e8c96a;
+  --cream:#f7f3ed;--white:#fff;--success:#2d8a4e;--warning:#d97706;--danger:#c0392b;
+  --text:#1a2744;--text-light:#6b7280;--border:#e5e0d8;
+  --shadow:0 4px 24px rgba(26,39,68,0.12);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:'Outfit',sans-serif;background:var(--cream);color:var(--text);min-height:100vh;overflow-x:hidden}
+.app-header{background:var(--navy);color:#fff;padding:13px 15px 9px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 2px 20px rgba(0,0,0,0.3)}
+.app-header h1{font-family:'DM Serif Display',serif;font-size:18px}
+.app-header h1 span{color:var(--gold)}
+.version-tag{font-size:9px;color:rgba(255,255,255,0.3);margin-top:1px}
+.header-right{display:flex;align-items:center;gap:7px}
+.update-btn{background:rgba(201,168,76,0.2);color:var(--gold);border:1px solid var(--gold);font-size:11px;padding:4px 9px;border-radius:20px;cursor:pointer;display:none}
+.update-btn.visible{display:block}
+.nav-tabs{background:var(--navy-dark);display:flex}
+.nav-tab{flex:1;padding:9px 5px;text-align:center;color:rgba(255,255,255,0.45);font-size:10px;font-weight:500;cursor:pointer;transition:all 0.2s;border-bottom:2px solid transparent}
+.nav-tab.active{color:var(--gold);border-bottom-color:var(--gold)}
+.nav-tab .ti{font-size:16px;display:block;margin-bottom:1px}
+.screen{display:none;padding:14px}
+.screen.active{display:block}
+.card{background:#fff;border-radius:14px;padding:15px;margin-bottom:13px;box-shadow:var(--shadow);border:1px solid var(--border)}
+.card-title{font-family:'DM Serif Display',serif;font-size:15px;color:var(--navy);margin-bottom:11px;display:flex;align-items:center;gap:7px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 16px;border-radius:10px;font-family:'Outfit',sans-serif;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all 0.2s;width:100%}
+.btn-primary{background:var(--navy);color:#fff}
+.btn-primary:active{background:var(--navy-dark);transform:scale(0.98)}
+.btn-gold{background:var(--gold);color:var(--navy)}
+.btn-outline{background:transparent;color:var(--navy);border:2px solid var(--navy)}
+.btn-success{background:var(--success);color:#fff}
+.btn-danger{background:var(--danger);color:#fff}
+.btn-warning{background:var(--warning);color:#fff}
+.btn-sm{padding:7px 12px;font-size:12px;border-radius:8px;width:auto}
+.row{display:flex;gap:8px}
+.row .btn{flex:1}
+.mt-8{margin-top:8px}
+.mt-12{margin-top:12px}
+.gap-8{display:flex;flex-direction:column;gap:8px}
+.upload-zone{border:2px dashed var(--gold);border-radius:13px;padding:26px 14px;text-align:center;background:rgba(201,168,76,0.05);cursor:pointer;position:relative;overflow:hidden}
+.upload-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.upload-icon{font-size:40px;margin-bottom:8px}
+.upload-zone p{color:var(--text-light);font-size:12px}
+.upload-zone strong{color:var(--navy);font-size:14px;display:block;margin-bottom:2px}
+/* PREVIEW CANVAS */
+.preview-wrap{position:relative;width:100%;margin:10px 0}
+#previewCanvas{width:100%;border-radius:10px;border:2px solid var(--border);display:block;cursor:zoom-in}
+.grid-info{font-size:11px;color:var(--text-light);margin-top:5px;text-align:center;padding:6px;background:rgba(26,39,68,0.05);border-radius:6px}
+/* TABLEAUX LIST */
+.tableaux-list{display:flex;flex-direction:column;gap:9px;margin-top:9px;max-height:55vh;overflow-y:auto}
+.tableau-item{border:2px solid var(--border);border-radius:11px;overflow:hidden;cursor:pointer;display:flex;align-items:center;background:#fff;transition:all 0.2s}
+.tableau-item.selected{border-color:var(--gold);box-shadow:0 0 0 3px rgba(201,168,76,0.18)}
+.tab-thumb{width:90px;min-width:90px;height:68px;object-fit:contain;border-right:1px solid var(--border);background:#f5f5f5}
+.tab-info{padding:7px 10px;flex:1}
+.tab-info strong{font-size:12px;color:var(--navy);font-weight:600}
+.tab-info small{font-size:10px;color:var(--text-light);display:block;margin-top:1px}
+.tab-check{width:26px;min-width:26px;height:26px;background:#fff;border:2px solid var(--border);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px;transition:all 0.2s;margin-right:10px}
+.tableau-item.selected .tab-check{background:var(--gold);border-color:var(--gold);color:var(--navy)}
+.sel-row{display:flex;gap:7px;margin-bottom:7px}
+/* RESULT TABLE */
+.result-table{width:100%;border-collapse:collapse;font-size:13px}
+.result-table th{background:var(--navy);color:#fff;padding:8px 5px;text-align:center;font-size:11px;font-weight:600}
+.result-table td{padding:8px 5px;text-align:center;border-bottom:1px solid var(--border);vertical-align:middle}
+.result-table tr:last-child td{border-bottom:none}
+.result-table tr:nth-child(even) td{background:rgba(26,39,68,0.03)}
+.row-label{font-weight:700;color:var(--navy);text-align:left;padding-left:9px;font-size:12px}
+.cc-row td{background:rgba(201,168,76,0.1)!important}
+.editable-cell{background:none;border:none;text-align:center;font-family:'DM Mono',monospace;font-size:13px;width:50px;padding:3px;border-radius:5px;color:var(--text);transition:all 0.2s}
+.editable-cell:focus{outline:none;background:rgba(201,168,76,0.15);border:1px solid var(--gold)}
+.cell-error{color:var(--danger)!important;background:rgba(192,57,43,0.08)!important}
+.cell-retour{color:var(--success)!important;font-style:italic}
+.cell-auto{color:var(--warning)!important;background:rgba(217,119,6,0.08)!important}
+/* CONFIDENCE */
+.conf-dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:2px;vertical-align:middle}
+.conf-high{background:#2d8a4e}.conf-med{background:#d97706}.conf-low{background:#c0392b}
+.quality-bar-wrap{display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:9px;font-size:12px;margin-bottom:11px}
+.quality-bar-wrap.good{background:rgba(45,138,78,0.1);color:var(--success);border:1px solid rgba(45,138,78,0.25)}
+.quality-bar-wrap.medium{background:rgba(217,119,6,0.1);color:var(--warning);border:1px solid rgba(217,119,6,0.25)}
+.quality-bar-wrap.poor{background:rgba(192,57,43,0.1);color:var(--danger);border:1px solid rgba(192,57,43,0.25)}
+.quality-bar{flex:1;height:5px;background:rgba(0,0,0,0.1);border-radius:3px;overflow:hidden}
+.quality-fill{height:100%;border-radius:3px;transition:width 0.5s}
+.quality-fill.good{background:#2d8a4e}.quality-fill.medium{background:#d97706}.quality-fill.poor{background:#c0392b}
+/* VERIFY */
+.verify-panel{border:2px solid var(--gold);border-radius:13px;overflow:hidden;margin-bottom:13px}
+.verify-header{background:var(--gold);color:var(--navy);padding:9px 13px;font-weight:700;font-size:12px;display:flex;align-items:center;justify-content:space-between}
+.verify-body{padding:13px}
+.verify-img-wrap{width:100%;margin-bottom:11px;border-radius:9px;overflow:hidden;border:1px solid var(--border);background:#111;cursor:zoom-in;max-height:220px;display:flex;align-items:center;justify-content:center;position:relative}
+.verify-img{width:100%;max-height:220px;object-fit:contain;display:block}
+.verify-zoom-hint{position:absolute;bottom:7px;right:7px;background:rgba(0,0,0,0.55);color:#fff;font-size:9px;padding:2px 6px;border-radius:8px}
+.verify-vals-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-bottom:11px}
+.verify-val-box{background:var(--cream);border-radius:7px;padding:7px 5px;text-align:center;border:1px solid var(--border)}
+.verify-val-box .vl{font-size:9px;color:var(--text-light);font-weight:700}
+.verify-val-box .vv{font-family:'DM Mono',monospace;font-size:13px;font-weight:600;color:var(--navy);margin:2px 0}
+.verify-val-box.has-error{border-color:var(--danger)}
+.verify-val-box.low-conf{border-color:var(--warning)}
+.verify-actions{display:flex;gap:8px}
+.verify-actions .btn{flex:1}
+/* VERIF PANEL */
+.verif-panel{background:linear-gradient(135deg,#1a2744,#243357);border-radius:13px;padding:14px;margin-bottom:13px;color:#fff;position:relative;overflow:hidden}
+.verif-panel::before{content:'✓';position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:52px;opacity:0.08;font-family:'DM Serif Display',serif}
+.verif-title{font-family:'DM Serif Display',serif;font-size:15px;margin-bottom:3px;color:var(--gold-light)}
+.verif-progress{background:rgba(255,255,255,0.15);border-radius:20px;height:6px;margin:9px 0 5px;overflow:hidden}
+.verif-progress-bar{background:var(--gold);height:100%;border-radius:20px;transition:width 0.5s}
+.verif-stats{font-size:11px;color:rgba(255,255,255,0.65)}
+.verif-badge{background:var(--gold);color:var(--navy);font-size:9px;font-weight:700;padding:3px 7px;border-radius:20px;display:none}
+.verif-badge.visible{display:block}
+/* ZOOM MODAL */
+.zoom-modal{position:fixed;inset:0;background:rgba(0,0,0,0.93);z-index:500;display:none;align-items:center;justify-content:center}
+.zoom-modal.active{display:flex}
+.zoom-modal img{max-width:100%;max-height:88vh;object-fit:contain;border-radius:6px}
+.zoom-close{position:absolute;top:14px;right:14px;background:rgba(255,255,255,0.12);color:#fff;border:none;width:34px;height:34px;border-radius:50%;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+/* STATS */
+.stats-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-bottom:13px}
+.stat-box{background:#fff;border-radius:10px;padding:10px 6px;text-align:center;border:1px solid var(--border);box-shadow:var(--shadow)}
+.stat-box .sl{font-size:9px;color:var(--text-light);font-weight:600;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:2px}
+.stat-box .sv{font-family:'DM Mono',monospace;font-size:19px;font-weight:600;color:var(--navy)}
+.stat-box.gold-box{background:var(--gold)}
+.stat-box.gold-box .sl,.stat-box.gold-box .sv{color:var(--navy)}
+/* HISTORY */
+.history-item{background:#fff;border-radius:10px;padding:11px 13px;margin-bottom:8px;border:1px solid var(--border);box-shadow:var(--shadow);display:flex;align-items:center;justify-content:space-between;cursor:pointer}
+.history-date{font-family:'DM Mono',monospace;font-size:13px;color:var(--navy);font-weight:600}
+.history-meta{font-size:11px;color:var(--text-light);margin-top:2px}
+.history-arrow{color:var(--gold);font-size:20px}
+/* ALERTS */
+.alert{border-radius:9px;padding:10px 12px;font-size:12px;margin-bottom:10px;display:flex;align-items:flex-start;gap:8px}
+.alert-warning{background:rgba(217,119,6,0.1);color:#92400e;border:1px solid rgba(217,119,6,0.3)}
+.alert-danger{background:rgba(192,57,43,0.1);color:var(--danger);border:1px solid rgba(192,57,43,0.3)}
+.alert-success{background:rgba(45,138,78,0.1);color:var(--success);border:1px solid rgba(45,138,78,0.3)}
+/* LOADER */
+.loader-overlay{position:fixed;inset:0;background:rgba(26,39,68,0.9);z-index:999;display:none;flex-direction:column;align-items:center;justify-content:center;color:#fff}
+.loader-overlay.active{display:flex}
+.spinner{width:44px;height:44px;border:4px solid rgba(255,255,255,0.18);border-top-color:var(--gold);border-radius:50%;animation:spin 0.8s linear infinite;margin-bottom:13px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loader-text{font-size:14px;opacity:0.85}
+.loader-sub{font-size:11px;opacity:0.48;margin-top:4px}
+.loader-conf{font-size:11px;opacity:0.6;margin-top:6px;font-family:'DM Mono',monospace}
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.58);z-index:200;display:none;align-items:flex-end;justify-content:center}
+.modal-overlay.active{display:flex}
+.modal{background:#fff;border-radius:20px 20px 0 0;padding:18px 15px 26px;width:100%;max-height:82vh;overflow-y:auto;animation:slideUp 0.28s ease}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.modal-handle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 16px}
+/* INSTALL */
+.install-banner{background:linear-gradient(135deg,#243357,#1a2744);border-radius:13px;padding:13px 14px;margin-bottom:13px;display:flex;align-items:center;gap:10px;cursor:pointer;border:1px solid rgba(201,168,76,0.3);display:none}
+.install-banner-icon{font-size:28px}
+.install-banner-text strong{color:var(--gold-light);font-size:13px;display:block}
+.install-banner-text p{color:rgba(255,255,255,0.6);font-size:11px;margin-top:1px}
+.install-banner-arrow{color:var(--gold);font-size:20px;margin-left:auto}
+/* MISC */
+.text-muted{color:var(--text-light);font-size:11px}
+.empty-state{text-align:center;padding:34px 16px;color:var(--text-light)}
+.empty-icon{font-size:42px;margin-bottom:9px}
+.section-title{font-size:11px;font-weight:700;color:var(--text-light);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;margin-top:16px}
+.section-title:first-child{margin-top:0}
+.autofill-note{font-size:9px;color:var(--warning);font-style:italic}
+/* DEBUG INFO */
+.debug-info{background:rgba(26,39,68,0.06);border-radius:8px;padding:8px 10px;font-family:'DM Mono',monospace;font-size:10px;color:var(--text-light);margin-top:8px;line-height:1.6}
+
+/* CORNER ADJUSTMENT */
+.corner-wrap{position:relative;width:100%;margin:10px 0;touch-action:none}
+.corner-wrap canvas{width:100%;border-radius:10px;border:2px solid var(--gold);display:block}
+.corner-handle{position:absolute;width:28px;height:28px;background:var(--gold);border:3px solid #fff;border-radius:50%;transform:translate(-50%,-50%);cursor:grab;box-shadow:0 2px 8px rgba(0,0,0,0.4);z-index:10;touch-action:none}
+.corner-handle:active{cursor:grabbing;background:var(--gold-light);transform:translate(-50%,-50%) scale(1.2)}
+.corner-label{position:absolute;font-size:9px;font-weight:700;color:var(--navy);background:var(--gold);padding:1px 4px;border-radius:4px;pointer-events:none;z-index:11}
+.corner-instructions{background:rgba(201,168,76,0.12);border:1px solid rgba(201,168,76,0.4);border-radius:9px;padding:9px 12px;font-size:11px;color:var(--navy);margin-bottom:10px;line-height:1.5}
+</style>
+</head>
+<body>
+
+<div class="loader-overlay" id="loader">
+  <div class="spinner"></div>
+  <div class="loader-text" id="loaderText">Chargement…</div>
+  <div class="loader-sub" id="loaderSub"></div>
+  <div class="loader-conf" id="loaderConf"></div>
+</div>
+
+<div class="zoom-modal" id="zoomModal" onclick="closeZoom()">
+  <button class="zoom-close">✕</button>
+  <img id="zoomImg" src="" alt="Zoom">
+</div>
+
+<div class="modal-overlay" id="historyModal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div id="historyModalContent"></div>
+    <div class="mt-12"><button class="btn btn-outline" onclick="closeModal()">Fermer</button></div>
+  </div>
+</div>
+
+<div class="app-header">
+  <div>
+    <h1>Linge <span>Hôtel</span></h1>
+    <div class="version-tag">v4.0.0</div>
+  </div>
+  <div class="header-right">
+    <button class="update-btn" id="updateBtn" onclick="applyUpdate()">🔄 Mise à jour</button>
+    <span class="verif-badge" id="verifBadge">✓ VÉRIF</span>
+  </div>
+</div>
+
+<div class="nav-tabs">
+  <div class="nav-tab active" onclick="showScreen('scan')"><span class="ti">📷</span>Scanner</div>
+  <div class="nav-tab" onclick="showScreen('results')"><span class="ti">📊</span>Résultats</div>
+  <div class="nav-tab" onclick="showScreen('history')"><span class="ti">📋</span>Historique</div>
+  <div class="nav-tab" onclick="showScreen('stats')"><span class="ti">📈</span>Stats</div>
+</div>
+
+<!-- ══ SCAN ══ -->
+<div class="screen active" id="screen-scan">
+
+  <div class="install-banner" id="installBanner" onclick="triggerInstall()">
+    <div class="install-banner-icon">📲</div>
+    <div class="install-banner-text">
+      <strong>Installer l'application</strong>
+      <p>Ajouter à l'écran d'accueil</p>
+    </div>
+    <div class="install-banner-arrow">›</div>
+  </div>
+
+  <div class="verif-panel" id="verifPanel">
+    <div class="verif-title">Mode Vérification OCR</div>
+    <p style="font-size:11px;opacity:0.78">Confirmez les résultats pour calibrer la reconnaissance.</p>
+    <div class="verif-progress"><div class="verif-progress-bar" id="verifBar" style="width:0%"></div></div>
+    <div class="verif-stats" id="verifStats">0 / 20 vérifications</div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">📷 Importer une image</div>
+    <div class="upload-zone">
+      <input type="file" accept="image/*" id="fileInput" onchange="handleFile(event)">
+      <div class="upload-icon">🖼️</div>
+      <strong>Galerie</strong>
+      <p>Appuyez pour choisir une photo</p>
+    </div>
+    <div class="mt-8">
+      <label class="btn btn-outline" style="cursor:pointer">
+        <input type="file" accept="image/*" capture="environment" style="display:none" onchange="handleFile(event)">
+        📸 Prendre une photo
+      </label>
+    </div>
+  </div>
+
+  <div id="previewSection" style="display:none">
+    <div class="card">
+      <div class="card-title">🔍 Ajuster les coins</div>
+      <div class="corner-instructions">
+        📌 Faites glisser les <strong>4 points dorés</strong> sur les coins de la feuille, puis appuyez sur Détecter.
+      </div>
+      <div class="corner-wrap" id="cornerWrap">
+        <canvas id="previewCanvas"></canvas>
+        <div class="corner-handle" id="ch-tl" data-corner="tl"></div>
+        <div class="corner-label" id="cl-tl">TL</div>
+        <div class="corner-handle" id="ch-tr" data-corner="tr"></div>
+        <div class="corner-label" id="cl-tr">TR</div>
+        <div class="corner-handle" id="ch-bl" data-corner="bl"></div>
+        <div class="corner-label" id="cl-bl">BL</div>
+        <div class="corner-handle" id="ch-br" data-corner="br"></div>
+        <div class="corner-label" id="cl-br">BR</div>
+      </div>
+      <div class="debug-info" id="debugInfo">—</div>
+      <div class="mt-12 gap-8">
+        <button class="btn btn-gold" onclick="runDetection()">🔎 Corriger et détecter</button>
+        <button class="btn btn-outline btn-sm" onclick="resetCorners()">↺ Réinitialiser les coins</button>
+      </div>
+    </div>
+
+    <div id="tableauxSection" style="display:none">
+      <div class="card">
+        <div class="card-title">☑️ Sélectionner les tableaux
+          <span id="tabCountBadge" style="margin-left:auto;font-size:11px;color:var(--text-light)"></span>
+        </div>
+        <div class="sel-row">
+          <button class="btn btn-outline btn-sm" onclick="selectAll()">✅ Tout</button>
+          <button class="btn btn-outline btn-sm" onclick="deselectAll()">☐ Aucun</button>
+        </div>
+        <div class="tableaux-list" id="tableauxList"></div>
+        <div class="mt-12 gap-8">
+          <button class="btn btn-primary" onclick="processSelected()">▶️ Lancer l'OCR</button>
+          <button class="btn btn-warning btn-sm" onclick="rerunDetection()">🔄 Relancer la détection</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ RESULTS ══ -->
+<div class="screen" id="screen-results">
+  <div id="noResults" class="empty-state">
+    <div class="empty-icon">📊</div>
+    <p>Aucun résultat. Scannez d'abord.</p>
+  </div>
+  <div id="resultsContent" style="display:none">
+    <div id="scanQualityBar"></div>
+    <div id="verifySection"></div>
+    <div id="errorsSection"></div>
+    <div class="card">
+      <div class="card-title">📋 Résultats
+        <span id="resultDateBadge" style="margin-left:auto;font-size:10px;color:var(--text-light);font-family:'DM Mono',monospace"></span>
+      </div>
+      <p class="text-muted" style="margin-bottom:8px;font-size:10px">
+        <span class="conf-dot conf-high"></span>Fiable &nbsp;
+        <span class="conf-dot conf-med"></span>Incertain &nbsp;
+        <span class="conf-dot conf-low"></span>Suspect &nbsp;
+        <span style="color:var(--warning)">~</span>Calculé
+      </p>
+      <div style="overflow-x:auto">
+        <table class="result-table">
+          <thead><tr><th>Type</th><th>E</th><th>S</th><th>R</th><th></th></tr></thead>
+          <tbody id="resultTableBody"></tbody>
+        </table>
+      </div>
+      <div class="mt-12 gap-8">
+        <button class="btn btn-success" onclick="saveResults()">💾 Enregistrer</button>
+        <div class="row">
+          <button class="btn btn-outline btn-sm" onclick="exportCSV()">📄 CSV</button>
+          <button class="btn btn-outline btn-sm" onclick="exportExcel()">📊 Excel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ HISTORY ══ -->
+<div class="screen" id="screen-history">
+  <div class="card" style="padding:11px 13px">
+    <div style="display:flex;align-items:center;gap:7px">
+      <input type="date" id="historyFilter" style="flex:1;padding:7px 9px;border:1px solid var(--border);border-radius:8px;font-family:'Outfit',sans-serif;font-size:12px;color:var(--navy)">
+      <button class="btn btn-primary btn-sm" onclick="filterHistory()">Filtrer</button>
+      <button class="btn btn-outline btn-sm" onclick="clearFilter()">Tout</button>
+    </div>
+  </div>
+  <div id="historyList"><div class="empty-state"><div class="empty-icon">📋</div><p>Aucun historique.</p></div></div>
+</div>
+
+<!-- ══ STATS ══ -->
+<div class="screen" id="screen-stats">
+  <div id="statsEmpty" class="empty-state"><div class="empty-icon">📈</div><p>Pas encore de données.</p></div>
+  <div id="statsContent" style="display:none">
+    <div class="section-title">Aujourd'hui</div>
+    <div class="stats-grid" id="statsTodayGrid"></div>
+    <div class="section-title">Totaux généraux</div>
+    <div class="card">
+      <div style="overflow-x:auto">
+        <table class="result-table">
+          <thead><tr><th>Type</th><th>Total E</th><th>Total S</th><th>Total R</th></tr></thead>
+          <tbody id="statsTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="section-title">Export global</div>
+    <div class="row">
+      <button class="btn btn-outline" onclick="exportAllCSV()">📄 CSV</button>
+      <button class="btn btn-outline" onclick="exportAllExcel()">📊 Excel</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════
+// CONSTANTS
+// ═══════════════════════════════════════════════════
+const LINGE_TYPES  = ['C','S','T','DD','DS','TD'];
+const LINGE_LABELS = {
+  C:'Cap de bain', S:'Serviette', T:'Tapis',
+  DD:'Drap Double', DS:'Drap Single', TD:"Taie d'oreiller",
+  CCD:'Cache Couette Double', CCS:'Cache Couette Single'
+};
+const MAX_IMAGE_SIZE   = 2048;
+const MIN_TABLE_WIDTH  = 80;   // px after downscale
+const MIN_TABLE_HEIGHT = 60;
+const OCR_CONF_MIN     = 55;
+const CONF_HIGH = 75, CONF_MED = 50;
+
+// ═══════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════
+let state = {
+  masterCanvas:    null,   // the downscaled preprocessed canvas
+  currentImage:   null,   // dataUrl for preview/zoom
+  detectedTableaux: [],
+  currentResults:  [],
+  hasCacheCouvette: false,
+  ccResults:       [],
+  verifMode:       true,
+  verifCount:      0,
+  verifTotal:      20,
+  scanQuality:     0,
+  history:         [],
+};
+let deferredInstall = null;
+
+// ═══════════════════════════════════════════════════
+// PWA
+// ═══════════════════════════════════════════════════
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault(); deferredInstall = e;
+  document.getElementById('installBanner').style.display = 'flex';
+});
+function triggerInstall() {
+  if (!deferredInstall) { alert("Menu Chrome (⋮) → Ajouter à l'écran d'accueil"); return; }
+  deferredInstall.prompt();
+}
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js').then(reg => {
+    reg.addEventListener('updatefound', () => {
+      const nw = reg.installing;
+      nw.addEventListener('statechange', () => {
+        if (nw.state==='installed' && navigator.serviceWorker.controller)
+          document.getElementById('updateBtn').classList.add('visible');
+      });
+    });
+  }).catch(()=>{});
+  let refreshing=false;
+  navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!refreshing){refreshing=true;location.reload();}});
+}
+function applyUpdate() { navigator.serviceWorker.getRegistration().then(r=>{if(r?.waiting)r.waiting.postMessage({type:'SKIP_WAITING'});}); }
+
+// ═══════════════════════════════════════════════════
+// PERSISTENCE
+// ═══════════════════════════════════════════════════
+function loadState() {
+  try {
+    const s = JSON.parse(localStorage.getItem('lingeHotel_v5')||'{}');
+    state.history    = s.history    || [];
+    state.verifMode  = s.verifMode  !== undefined ? s.verifMode : true;
+    state.verifCount = s.verifCount || 0;
+  } catch(e){}
+  updateVerifUI(); renderHistory(); renderStats();
+}
+function saveState() {
+  localStorage.setItem('lingeHotel_v5', JSON.stringify({
+    history:state.history, verifMode:state.verifMode, verifCount:state.verifCount
+  }));
+}
+
+// ═══════════════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════════════
+function showScreen(n) {
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('screen-'+n).classList.add('active');
+  ['scan','results','history','stats'].forEach((s,i)=>{
+    if(s===n) document.querySelectorAll('.nav-tab')[i].classList.add('active');
+  });
+  if(n==='history') renderHistory();
+  if(n==='stats')   renderStats();
+}
+
+// ═══════════════════════════════════════════════════
+// STEP 1: IMAGE LOADING + CORNER ADJUSTMENT
+// ═══════════════════════════════════════════════════
+
+// Corner state (in preview canvas coordinates)
+let corners = { tl:{x:0,y:0}, tr:{x:0,y:0}, bl:{x:0,y:0}, br:{x:0,y:0} };
+let dragCorner = null;
+
+function handleFile(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  showLoader('Chargement…', 'Lecture du fichier');
+
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const dataUrl = ev.target.result;
+    state.currentImage = dataUrl;
+    const img = new Image();
+    img.onload = () => {
+      state.loadedImg = img;
+
+      // Draw preview
+      const preview = document.getElementById('previewCanvas');
+      const PW = Math.min(img.naturalWidth, 800);
+      const PH = Math.round(img.naturalHeight * PW / img.naturalWidth);
+      preview.width = PW; preview.height = PH;
+      preview.getContext('2d').drawImage(img, 0, 0, PW, PH);
+
+      // Set default corners (full image with 5% margin)
+      const mx = Math.round(PW * 0.05), my = Math.round(PH * 0.05);
+      corners = {
+        tl: {x: mx,      y: my},
+        tr: {x: PW-mx,   y: my},
+        bl: {x: mx,      y: PH-my},
+        br: {x: PW-mx,   y: PH-my}
+      };
+
+      updateCornerHandles();
+      setupCornerDrag();
+      drawCornerOverlay();
+
+      document.getElementById('debugInfo').textContent =
+        `${img.naturalWidth}×${img.naturalHeight}px → aperçu ${PW}×${PH} | Ajustez les coins sur la feuille`;
+      document.getElementById('previewSection').style.display = 'block';
+      document.getElementById('tableauxSection').style.display = 'none';
+      state.detectedTableaux = [];
+      hideLoader();
+    };
+    img.onerror = () => { hideLoader(); alert('Erreur chargement.'); };
+    img.src = dataUrl;
+  };
+  reader.onerror = () => { hideLoader(); alert('Erreur lecture.'); };
+  reader.readAsDataURL(file);
+}
+
+function updateCornerHandles() {
+  const wrap = document.getElementById('cornerWrap');
+  const wRect = wrap.getBoundingClientRect();
+  const preview = document.getElementById('previewCanvas');
+  const pRect = preview.getBoundingClientRect();
+  // Position handles relative to wrap
+  const offX = pRect.left - wRect.left;
+  const offY = pRect.top  - wRect.top;
+  const sx = pRect.width  / preview.width;
+  const sy = pRect.height / preview.height;
+
+  ['tl','tr','bl','br'].forEach(k => {
+    const h = document.getElementById('ch-'+k);
+    const l = document.getElementById('cl-'+k);
+    const px = offX + corners[k].x * sx;
+    const py = offY + corners[k].y * sy;
+    h.style.left = px+'px'; h.style.top = py+'px';
+    l.style.left = (px+14)+'px'; l.style.top = (py-16)+'px';
+  });
+}
+
+function drawCornerOverlay() {
+  const preview = document.getElementById('previewCanvas');
+  const ctx = preview.getContext('2d');
+  const img = state.loadedImg;
+  if (!img) return;
+  ctx.drawImage(img, 0, 0, preview.width, preview.height);
+  // Draw quadrilateral
+  ctx.beginPath();
+  ctx.moveTo(corners.tl.x, corners.tl.y);
+  ctx.lineTo(corners.tr.x, corners.tr.y);
+  ctx.lineTo(corners.br.x, corners.br.y);
+  ctx.lineTo(corners.bl.x, corners.bl.y);
+  ctx.closePath();
+  ctx.strokeStyle = 'rgba(201,168,76,0.9)';
+  ctx.lineWidth = 3;
+  ctx.stroke();
+  ctx.fillStyle = 'rgba(201,168,76,0.08)';
+  ctx.fill();
+}
+
+function setupCornerDrag() {
+  const wrap = document.getElementById('cornerWrap');
+
+  function getPos(e) {
+    const r = wrap.getBoundingClientRect();
+    const preview = document.getElementById('previewCanvas');
+    const pr = preview.getBoundingClientRect();
+    const touch = e.touches ? e.touches[0] : e;
+    // Convert screen coords to canvas coords
+    const sx = preview.width  / pr.width;
+    const sy = preview.height / pr.height;
+    return {
+      x: Math.max(0, Math.min(preview.width,  (touch.clientX - pr.left) * sx)),
+      y: Math.max(0, Math.min(preview.height, (touch.clientY - pr.top)  * sy))
+    };
+  }
+
+  ['tl','tr','bl','br'].forEach(k => {
+    const h = document.getElementById('ch-'+k);
+    const start = e => { e.preventDefault(); dragCorner = k; };
+    h.addEventListener('mousedown',  start);
+    h.addEventListener('touchstart', start, {passive:false});
+  });
+
+  const move = e => {
+    if (!dragCorner) return;
+    e.preventDefault();
+    const pos = getPos(e);
+    corners[dragCorner] = pos;
+    updateCornerHandles();
+    drawCornerOverlay();
+  };
+  const end = () => { dragCorner = null; };
+
+  wrap.addEventListener('mousemove',  move);
+  wrap.addEventListener('touchmove',  move, {passive:false});
+  wrap.addEventListener('mouseup',    end);
+  wrap.addEventListener('touchend',   end);
+}
+
+function resetCorners() {
+  const preview = document.getElementById('previewCanvas');
+  const PW = preview.width, PH = preview.height;
+  const mx = Math.round(PW*0.05), my = Math.round(PH*0.05);
+  corners = {
+    tl:{x:mx,   y:my},   tr:{x:PW-mx, y:my},
+    bl:{x:mx,   y:PH-my},br:{x:PW-mx, y:PH-my}
+  };
+  updateCornerHandles();
+  drawCornerOverlay();
+}
+
+// ── Apply perspective correction using bilinear transform ──
+function applyPerspectiveCorrection() {
+  const img   = state.loadedImg;
+  const preview = document.getElementById('previewCanvas');
+  const scaleX = img.naturalWidth  / preview.width;
+  const scaleY = img.naturalHeight / preview.height;
+
+  // Map corners back to original image coordinates
+  const src = {
+    tl: {x: corners.tl.x*scaleX, y: corners.tl.y*scaleY},
+    tr: {x: corners.tr.x*scaleX, y: corners.tr.y*scaleY},
+    bl: {x: corners.bl.x*scaleX, y: corners.bl.y*scaleY},
+    br: {x: corners.br.x*scaleX, y: corners.br.y*scaleY},
+  };
+
+  // Output size: average of top/bottom width and left/right height
+  const outW = Math.round((
+    Math.hypot(src.tr.x-src.tl.x, src.tr.y-src.tl.y) +
+    Math.hypot(src.br.x-src.bl.x, src.br.y-src.bl.y)
+  ) / 2);
+  const outH = Math.round((
+    Math.hypot(src.bl.x-src.tl.x, src.bl.y-src.tl.y) +
+    Math.hypot(src.br.x-src.tr.x, src.br.y-src.tr.y)
+  ) / 2);
+
+  const finalW = Math.min(outW, MAX_IMAGE_SIZE);
+  const finalH = Math.min(outH, MAX_IMAGE_SIZE);
+
+  // Build corrected canvas via inverse bilinear mapping
+  const dst = document.createElement('canvas');
+  dst.width = finalW; dst.height = finalH;
+  const dctx = dst.getContext('2d', {willReadFrequently: true});
+  dctx.fillStyle = '#ffffff';
+  dctx.fillRect(0, 0, finalW, finalH);
+
+  // Draw source image to temp canvas for pixel sampling
+  const tmpC = document.createElement('canvas');
+  tmpC.width = img.naturalWidth; tmpC.height = img.naturalHeight;
+  const tmpX = tmpC.getContext('2d', {willReadFrequently: true});
+  tmpX.drawImage(img, 0, 0);
+  const srcData = tmpX.getImageData(0, 0, tmpC.width, tmpC.height).data;
+  const SW = tmpC.width, SH = tmpC.height;
+
+  const dstData = dctx.createImageData(finalW, finalH);
+  const dd = dstData.data;
+
+  // Inverse bilinear: for each dst pixel, find src pixel
+  const {tl,tr,bl,br} = src;
+  for (let dy = 0; dy < finalH; dy++) {
+    const v = dy / (finalH-1);
+    for (let dx = 0; dx < finalW; dx++) {
+      const u = dx / (finalW-1);
+      // Bilinear interpolation of corners
+      const sx = (1-u)*(1-v)*tl.x + u*(1-v)*tr.x + (1-u)*v*bl.x + u*v*br.x;
+      const sy = (1-u)*(1-v)*tl.y + u*(1-v)*tr.y + (1-u)*v*bl.y + u*v*br.y;
+      const six = Math.round(Math.max(0, Math.min(SW-1, sx)));
+      const siy = Math.round(Math.max(0, Math.min(SH-1, sy)));
+      const si = (siy*SW + six)*4;
+      const di = (dy*finalW + dx)*4;
+      dd[di]   = srcData[si];
+      dd[di+1] = srcData[si+1];
+      dd[di+2] = srcData[si+2];
+      dd[di+3] = 255;
+    }
+  }
+  dctx.putImageData(dstData, 0, 0);
+
+  // Now preprocess for segmentation
+  const mctx = dst.getContext('2d', {willReadFrequently: true});
+  const mData = mctx.getImageData(0, 0, finalW, finalH);
+  const md = mData.data;
+  // Grayscale + auto-contrast
+  for (let i=0;i<md.length;i+=4){
+    const g=Math.round(0.299*md[i]+0.587*md[i+1]+0.114*md[i+2]);
+    md[i]=md[i+1]=md[i+2]=g;
+  }
+  let mn=255,mx2=0;
+  for (let i=0;i<md.length;i+=4){if(md[i]<mn)mn=md[i];if(md[i]>mx2)mx2=md[i];}
+  const rng=mx2-mn||1;
+  for (let i=0;i<md.length;i+=4){
+    const v=Math.round(((md[i]-mn)/rng)*255);
+    md[i]=md[i+1]=md[i+2]=v;
+  }
+  mctx.putImageData(mData,0,0);
+  state.masterCanvas = dst;
+  return dst;
+}
+
+// ═══════════════════════════════════════════════════
+// STEP 2: HYBRID HEURISTIC SEGMENTATION v2
+// Key fixes:
+//  - Detect WHITESPACE GAPS (not dark zones)
+//  - Smoothed projections (moving average)
+//  - Row detection first, then columns per row
+//  - Minimum gap enforcement
+//  - Color debug overlay (green=rows, blue=cols)
+// ═══════════════════════════════════════════════════
+
+// Moving average smoothing
+function smoothArray(arr, radius) {
+  radius = radius || 8;
+  const out = new Float32Array(arr.length);
+  for (let i = 0; i < arr.length; i++) {
+    let sum = 0, cnt = 0;
+    for (let j = Math.max(0,i-radius); j <= Math.min(arr.length-1,i+radius); j++) {
+      sum += arr[j]; cnt++;
+    }
+    out[i] = sum / cnt;
+  }
+  return out;
+}
+
+// Find GAPS (light zones) in a projection = separators between tableaux
+// Returns array of {mid, width} for each gap found
+function findGaps(proj, lightThreshold, minGapSize) {
+  const gaps = [];
+  let gapStart = null;
+  for (let i = 0; i < proj.length; i++) {
+    if (proj[i] <= lightThreshold && gapStart === null) gapStart = i;
+    if ((proj[i] > lightThreshold || i === proj.length-1) && gapStart !== null) {
+      const gapW = i - gapStart;
+      if (gapW >= minGapSize) gaps.push({ start: gapStart, end: i, mid: Math.round((gapStart+i)/2) });
+      gapStart = null;
+    }
+  }
+  return gaps;
+}
+
+// Build content regions from gap list
+function regionsFromGaps(gaps, totalSize, minRegionSize) {
+  const bounds = [0, ...gaps.map(g => g.mid), totalSize];
+  const regions = [];
+  for (let i = 0; i < bounds.length-1; i++) {
+    const start = bounds[i], end = bounds[i+1];
+    if (end - start >= minRegionSize) regions.push({ start, end });
+  }
+  return regions;
+}
+
+async function runDetection() {
+  if (!state.loadedImg) { alert('Aucune image chargée.'); return; }
+
+  showLoader('Correction perspective…', 'Application de la transformation');
+  await sleep(60);
+
+  // Apply perspective correction based on user corners
+  applyPerspectiveCorrection();
+  const canvas = state.masterCanvas;
+
+  // Show corrected image as preview so user can verify
+  const preview = document.getElementById('previewCanvas');
+  const sc = Math.min(800/canvas.width, 600/canvas.height, 1);
+  preview.width  = Math.round(canvas.width  * sc);
+  preview.height = Math.round(canvas.height * sc);
+  preview.getContext('2d').drawImage(canvas, 0, 0, preview.width, preview.height);
+
+  showLoader('Détection…', 'Calcul des projections');
+  await sleep(40);
+
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  const W = canvas.width, H = canvas.height;
+  const imgData = ctx.getImageData(0, 0, W, H).data;
+
+  // ── 1. Horizontal projection (dark pixels per row) ──
+  const hRaw = new Float32Array(H);
+  for (let y = 0; y < H; y++) {
+    let dark = 0;
+    for (let x = 0; x < W; x++) {
+      if (imgData[(y*W+x)*4] < 180) dark++;
+    }
+    hRaw[y] = dark / W; // normalize 0-1
+  }
+
+  // Smooth to remove noise
+  const hSmooth = smoothArray(hRaw, 10);
+
+  // Auto-calibrate threshold based on image statistics
+  // Find the median projection value to set threshold adaptively
+  const hSorted = [...hSmooth].sort((a,b) => a-b);
+  const hMedian = hSorted[Math.floor(hSorted.length/2)];
+  const hMin    = hSorted[0];
+  const hMax    = hSorted[hSorted.length-1];
+  // Threshold = midpoint between min and median (catches whitespace gaps)
+  const hThresh = hMin + (hMedian - hMin) * 0.4;
+
+  const hGaps = findGaps(hSmooth, hThresh, 10);
+  let hRegions = regionsFromGaps(hGaps, H, MIN_TABLE_HEIGHT);
+
+  const debugParts = [
+    `W:${W} H:${H}`,
+    `hMin:${hMin.toFixed(3)} hMed:${hMedian.toFixed(3)} hThr:${hThresh.toFixed(3)}`,
+    `hGaps:${hGaps.length}`,
+    `hRows:${hRegions.length}`
+  ];
+
+  // If horizontal detection fails, use equal vertical split
+  if (hRegions.length < 2) {
+    const rowH = Math.floor(H / 6);
+    hRegions = Array.from({length:6}, (_,i) => ({ start:i*rowH, end:i===5?H:(i+1)*rowH }));
+    debugParts.push('hFallback:6');
+  }
+
+  showLoader('Détection…', `${hRegions.length} lignes trouvées`);
+  await sleep(30);
+
+  // ── 2. Vertical projection per row ──
+  state.detectedTableaux = [];
+  let tabId = 0;
+
+  for (let ri = 0; ri < hRegions.length; ri++) {
+    const hr = hRegions[ri];
+    const stripH = hr.end - hr.start;
+    if (stripH < 10) continue;
+
+    // Get pixel data for this strip
+    const stripData = ctx.getImageData(0, hr.start, W, stripH).data;
+
+    // Vertical projection for this strip
+    const vRaw = new Float32Array(W);
+    for (let x = 0; x < W; x++) {
+      let dark = 0;
+      for (let y = 0; y < stripH; y++) {
+        if (stripData[(y*W+x)*4] < 180) dark++;
+      }
+      vRaw[x] = dark / stripH;
+    }
+
+    const vSmooth = smoothArray(vRaw, 6);
+
+    // Detect vertical gaps
+    // Adaptive vertical threshold
+    const vSorted = [...vSmooth].sort((a,b)=>a-b);
+    const vMedian = vSorted[Math.floor(vSorted.length/2)];
+    const vMin    = vSorted[0];
+    const vThresh = vMin + (vMedian - vMin) * 0.4;
+
+    const vGaps = findGaps(vSmooth, vThresh, 6);
+    let vRegions = regionsFromGaps(vGaps, W, MIN_TABLE_WIDTH);
+
+    // Fallback: equal 6 columns if detection fails
+    if (vRegions.length < 2) {
+      const colW = Math.floor(W / 6);
+      vRegions = Array.from({length:6}, (_,i) => ({ start:i*colW, end:i===5?W:(i+1)*colW }));
+    }
+
+    for (const vr of vRegions) {
+      const x = vr.start, y = hr.start;
+      const w = vr.end - vr.start;
+      const h = stripH;
+      if (w < MIN_TABLE_WIDTH || h < MIN_TABLE_HEIGHT) continue;
+
+      // Validate: must have some dark content
+      const darkRatio = getDarkRatio(ctx, x, y, w, h);
+      if (darkRatio < 0.005) continue;
+
+      // Aspect ratio check
+      const ar = w / h;
+      if (ar < 0.2 || ar > 5) continue;
+
+      const cell = document.createElement('canvas');
+      cell.width = w; cell.height = h;
+      cell.getContext('2d').drawImage(canvas, x, y, w, h, 0, 0, w, h);
+
+      state.detectedTableaux.push({
+        id: tabId++, x, y, w, h,
+        dataUrl: cell.toDataURL('image/jpeg', 0.85),
+        darkRatio, row: ri, selected: false
+      });
+    }
+  }
+
+  // Final fallback
+  if (state.detectedTableaux.length < 4) {
+    debugParts.push('FALLBACK_6x6');
+    fallbackGrid(canvas, ctx);
+  }
+
+  debugParts.push(`Tableaux:${state.detectedTableaux.length}`);
+  document.getElementById('debugInfo').textContent = debugParts.join(' | ');
+
+  drawDetectionOverlay(hRegions);
+  hideLoader();
+  document.getElementById('tabCountBadge').textContent = `${state.detectedTableaux.length} tableaux`;
+  renderTableauxList();
+  document.getElementById('tableauxSection').style.display = 'block';
+}
+
+function rerunDetection() { runDetection(); }
+
+function getDarkRatio(ctx, x, y, w, h) {
+  if (w<1||h<1) return 0;
+  const d = ctx.getImageData(x, y, w, h).data;
+  let dark = 0;
+  for (let i = 0; i < d.length; i+=4) if (d[i] < 180) dark++;
+  return dark / (w * h);
+}
+
+// ── Fallback: 6×6 equal grid ──
+function fallbackGrid(canvas, ctx) {
+  const COLS = 6, ROWS = 6;
+  const W = canvas.width, H = canvas.height;
+  const cw = Math.floor(W/COLS), rh = Math.floor(H/ROWS);
+  state.detectedTableaux = [];
+  let id = 0;
+  for (let row = 0; row < ROWS; row++) {
+    for (let col = 0; col < COLS; col++) {
+      const x = col*cw, y = row*rh;
+      const w = col===COLS-1 ? W-x : cw;
+      const h = row===ROWS-1 ? H-y : rh;
+      const cell = document.createElement('canvas');
+      cell.width = w; cell.height = h;
+      cell.getContext('2d').drawImage(canvas, x, y, w, h, 0, 0, w, h);
+      state.detectedTableaux.push({
+        id:id++, x, y, w, h, row,
+        dataUrl: cell.toDataURL('image/jpeg', 0.85),
+        darkRatio: 0.05, selected: false
+      });
+    }
+  }
+}
+
+// ── Debug overlay: green=rows, gold=cols ──
+function drawDetectionOverlay(hRegions) {
+  const preview = document.getElementById('previewCanvas');
+  const pctx = preview.getContext('2d');
+  const sx = preview.width  / state.masterCanvas.width;
+  const sy = preview.height / state.masterCanvas.height;
+
+  // Draw row bands in green
+  hRegions.forEach(hr => {
+    pctx.strokeStyle = 'rgba(45,138,78,0.7)';
+    pctx.lineWidth = 2;
+    pctx.strokeRect(0, hr.start*sy, preview.width, (hr.end-hr.start)*sy);
+  });
+
+  // Draw tableau boxes in gold
+  state.detectedTableaux.forEach(t => {
+    pctx.strokeStyle = 'rgba(201,168,76,0.9)';
+    pctx.lineWidth = 2;
+    pctx.strokeRect(t.x*sx, t.y*sy, t.w*sx, t.h*sy);
+  });
+}
+
+// ═══════════════════════════════════════════════════
+// STEP 3: RENDER TABLEAUX LIST
+// ═══════════════════════════════════════════════════
+function renderTableauxList() {
+  const list = document.getElementById('tableauxList');
+  list.innerHTML = '';
+  state.detectedTableaux.forEach((t, i) => {
+    const div = document.createElement('div');
+    div.className = 'tableau-item';
+    div.id = 'tab-'+i;
+
+    const img = document.createElement('img');
+    img.className = 'tab-thumb';
+    img.alt = `T${t.id+1}`;
+    img.src = t.dataUrl;
+    img.onclick = e => { e.stopPropagation(); openZoom(t.dataUrl); };
+
+    const info = document.createElement('div');
+    info.className = 'tab-info';
+    info.innerHTML = `<strong>Tableau ${t.id+1}</strong>
+      <small>${t.w}×${t.h}px · densité: ${Math.round(t.darkRatio*100)}% · 🔍 zoomer</small>`;
+
+    const check = document.createElement('div');
+    check.className = 'tab-check';
+    check.id = 'chk-'+i;
+
+    div.appendChild(img); div.appendChild(info); div.appendChild(check);
+    div.onclick = () => toggleTab(i);
+    list.appendChild(div);
+  });
+}
+function toggleTab(i) {
+  state.detectedTableaux[i].selected = !state.detectedTableaux[i].selected;
+  document.getElementById('tab-'+i).classList.toggle('selected', state.detectedTableaux[i].selected);
+  document.getElementById('chk-'+i).textContent = state.detectedTableaux[i].selected ? '✓' : '';
+}
+function selectAll()   { state.detectedTableaux.forEach((_,i)=>{ state.detectedTableaux[i].selected=true;  document.getElementById('tab-'+i)?.classList.add('selected');    document.getElementById('chk-'+i).textContent='✓';}); }
+function deselectAll() { state.detectedTableaux.forEach((_,i)=>{ state.detectedTableaux[i].selected=false; document.getElementById('tab-'+i)?.classList.remove('selected'); document.getElementById('chk-'+i).textContent=''; }); }
+
+// ═══════════════════════════════════════════════════
+// STEP 4: OCR WITH CONFIDENCE FILTERING
+// ═══════════════════════════════════════════════════
+async function processSelected() {
+  const selected = state.detectedTableaux.filter(t => t.selected);
+  if (!selected.length) { alert('Sélectionnez au moins un tableau.'); return; }
+
+  showLoader('OCR…', 'Chargement moteur Tesseract');
+  if (typeof Tesseract === 'undefined') {
+    await loadScript('https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.1.1/tesseract.min.js');
+  }
+
+  const worker = await Tesseract.createWorker('fra+eng', 1, {
+    logger: m => {
+      if (m.status==='recognizing text')
+        document.getElementById('loaderSub').textContent = `Lecture: ${Math.round(m.progress*100)}%`;
+    }
+  });
+  await worker.setParameters({
+    tessedit_pageseg_mode: '6',
+    tessedit_char_whitelist: '0123456789-CcSsTtDdRrEe ',
+  });
+
+  state.currentResults = []; state.ccResults = []; state.hasCacheCouvette = false;
+  let allConf = [];
+
+  for (let i = 0; i < selected.length; i++) {
+    const tab = selected[i];
+    showLoader(`OCR ${i+1}/${selected.length}`, `Tableau ${tab.id+1}`);
+
+    // Preprocess for OCR: enhance contrast
+    const ocrCanvas = await prepareForOCR(tab.dataUrl);
+    const result = await worker.recognize(ocrCanvas);
+    const { words, confidence: pageConf } = result.data;
+    allConf.push(pageConf);
+    document.getElementById('loaderConf').textContent = `Confiance: ${Math.round(pageConf)}%`;
+
+    // Filter by confidence
+    const filteredWords = (words||[]).filter(w => w.confidence >= OCR_CONF_MIN);
+    const parsed = parseByCoords(filteredWords, tab.dataUrl, pageConf);
+
+    if (!state.currentResults.length) {
+      state.currentResults = parsed.rows;
+    } else {
+      parsed.rows.forEach(nr => {
+        const ex = state.currentResults.find(r => r.type===nr.type);
+        if (ex) { ex.E=sumVal(ex.E,nr.E); ex.S=sumVal(ex.S,nr.S); ex.R=sumVal(ex.R,nr.R); }
+      });
+    }
+    if (parsed.hasCC) {
+      state.hasCacheCouvette = true;
+      if (!state.ccResults.length) state.ccResults = parsed.ccRows;
+    }
+  }
+
+  await worker.terminate();
+  state.scanQuality = allConf.length ? Math.round(allConf.reduce((s,c)=>s+c,0)/allConf.length) : 0;
+  hideLoader();
+  renderResults();
+  showScreen('results');
+}
+
+async function prepareForOCR(dataUrl) {
+  return new Promise(res => {
+    const img = new Image();
+    img.onload = () => {
+      const W = img.naturalWidth, H = img.naturalHeight;
+      const c = document.createElement('canvas');
+      c.width = W; c.height = H;
+      const ctx = c.getContext('2d');
+      ctx.filter = 'contrast(1.4) brightness(1.05)';
+      ctx.drawImage(img, 0, 0);
+      res(c);
+    };
+    img.src = dataUrl;
+  });
+}
+
+// ═══════════════════════════════════════════════════
+// STEP 5: COORDINATE-BASED PARSING
+// ═══════════════════════════════════════════════════
+function parseByCoords(words, imageUrl, pageConf) {
+  if (!words.length) return emptyResult(imageUrl, pageConf);
+
+  const W = words.reduce((mx,w)=>Math.max(mx,w.bbox.x1),1);
+
+  // Column zones: label(0-28%), E(28-52%), S(52-76%), R(76-100%)
+  const colOf = x => {
+    const r = x / W;
+    if (r < 0.28) return 'label';
+    if (r < 0.52) return 'E';
+    if (r < 0.76) return 'S';
+    return 'R';
+  };
+
+  const labelWords = words.filter(w => colOf((w.bbox.x0+w.bbox.x1)/2)==='label');
+  const dataWords  = words.filter(w => colOf((w.bbox.x0+w.bbox.x1)/2)!=='label');
+  const hasCC = words.some(w => /^cc$/i.test(w.text.trim()));
+  const H = words.reduce((mx,w)=>Math.max(mx,w.bbox.y1),1);
+  const rowClusters = clusterByY(labelWords, H*0.12);
+
+  const rowPositions = rowClusters.map((cl,i) => {
+    const text = cl.map(w=>w.text).join(' ').toUpperCase().replace(/[^CSTDR]/g,'');
+    const type = matchType(text, i);
+    const yMid = cl.reduce((s,w)=>s+(w.bbox.y0+w.bbox.y1)/2,0)/cl.length;
+    return { type, yMid };
+  }).filter(r=>r.type);
+
+  const rows = LINGE_TYPES.map(type => {
+    const rp = rowPositions.find(r=>r.type===type);
+    const bandH = H * 0.15;
+    const bandWords = rp ? dataWords.filter(w=>Math.abs((w.bbox.y0+w.bbox.y1)/2-rp.yMid)<bandH) : [];
+
+    const vals = {E:null,S:null,R:null,confE:0,confS:0,confR:0};
+    bandWords.forEach(w => {
+      const col  = colOf((w.bbox.x0+w.bbox.x1)/2);
+      if (col==='label') return;
+      const val  = parseVal(w.text);
+      const conf = w.confidence||0;
+      if (val!==null && (vals[col]===null || conf>vals['conf'+col])) {
+        vals[col]=val; vals['conf'+col]=conf;
+      }
+    });
+
+    const isRetour = (vals.E===null||vals.E===0) && vals.R!==null && vals.R>0;
+    const effE = isRetour ? 0 : vals.E;
+    let R=vals.R, autoR=false;
+    if (R===null && effE!==null && vals.S!==null) { R=Math.max(0,effE-vals.S); autoR=true; }
+    let hasError=false, errorMsg='';
+    if (!isRetour && !autoR && effE!==null && vals.S!==null && R!==null && effE!==vals.S+R) {
+      hasError=true; errorMsg=`E(${effE})≠S(${vals.S})+R(${R})`;
+    }
+    return { type, label:LINGE_LABELS[type], E:effE, S:vals.S, R,
+             confE:vals.confE||pageConf, confS:vals.confS||pageConf, confR:vals.confR||pageConf,
+             isRetour, hasError, errorMsg, autoR, imageUrl };
+  });
+
+  const ccRows = hasCC ? [
+    {type:'CCD',label:'Cache Couette Double',E:null,S:null,R:null,confE:0,confS:0,confR:0,isRetour:false,hasError:false,errorMsg:'',autoR:false,imageUrl},
+    {type:'CCS',label:'Cache Couette Single', E:null,S:null,R:null,confE:0,confS:0,confR:0,isRetour:false,hasError:false,errorMsg:'',autoR:false,imageUrl},
+  ] : [];
+  return {rows, ccRows, hasCC};
+}
+
+function matchType(text, fallback) {
+  if (/^C$/.test(text))  return 'C';
+  if (/^S$/.test(text))  return 'S';
+  if (/^T$/.test(text))  return 'T';
+  if (/DD/.test(text))   return 'DD';
+  if (/DS/.test(text))   return 'DS';
+  if (/TD/.test(text))   return 'TD';
+  return LINGE_TYPES[fallback] || null;
+}
+
+function clusterByY(words, gap) {
+  if (!words.length) return [];
+  const sorted = [...words].sort((a,b)=>a.bbox.y0-b.bbox.y0);
+  const clusters = [[sorted[0]]];
+  for (let i=1;i<sorted.length;i++) {
+    const last=clusters[clusters.length-1];
+    if (sorted[i].bbox.y0-last[last.length-1].bbox.y1<gap) last.push(sorted[i]);
+    else clusters.push([sorted[i]]);
+  }
+  return clusters;
+}
+
+function parseVal(raw) {
+  if (!raw) return null;
+  const FIXES = {'o':'0','O':'0','Q':'0','l':'1','I':'1','i':'1','|':'1','z':'2','Z':'2','B':'8','s':'5','q':'9','g':'9','G':'6','b':'6'};
+  let v = raw.trim().replace(/[^0-9oOlIizZBsqgGb\-]/g,'');
+  if (v==='-'||v==='—') return 0;
+  v = v.split('').map(c=>FIXES[c]||c).join('');
+  const n = parseInt(v, 10);
+  return isNaN(n) ? null : n;
+}
+
+function emptyResult(imageUrl, pageConf) {
+  return {
+    rows: LINGE_TYPES.map(type=>({
+      type,label:LINGE_LABELS[type],E:null,S:null,R:null,
+      confE:pageConf,confS:pageConf,confR:pageConf,
+      isRetour:false,hasError:false,errorMsg:'',autoR:false,imageUrl
+    })),
+    ccRows:[], hasCC:false
+  };
+}
+
+// ═══════════════════════════════════════════════════
+// RENDER RESULTS
+// ═══════════════════════════════════════════════════
+function renderResults() {
+  document.getElementById('noResults').style.display='none';
+  document.getElementById('resultsContent').style.display='block';
+  document.getElementById('resultDateBadge').textContent = formatDate(new Date());
+  renderQualityBar(); renderVerifyPanel(); renderErrors();
+
+  const tbody = document.getElementById('resultTableBody');
+  tbody.innerHTML = '';
+  state.currentResults.forEach((row,i) => {
+    const tr = document.createElement('tr');
+    const icon = row.hasError?'⚠️':row.isRetour?'↩️':row.autoR?'~':'✅';
+    tr.innerHTML=`
+      <td class="row-label">${row.type}<br><span style="font-size:9px;color:var(--text-light);font-weight:400">${row.label}</span></td>
+      <td>${cd(row.confE)}<input class="editable-cell ${row.hasError?'cell-error':row.isRetour?'cell-retour':''}" type="number" value="${row.E??''}" onchange="updateCell(${i},'E',this.value)" placeholder="—"></td>
+      <td>${cd(row.confS)}<input class="editable-cell" type="number" value="${row.S??''}" onchange="updateCell(${i},'S',this.value)" placeholder="—"></td>
+      <td>${cd(row.confR)}<input class="editable-cell ${row.autoR?'cell-auto':''}" type="number" value="${row.R??''}" onchange="updateCell(${i},'R',this.value)" placeholder="—">${row.autoR?'<div class="autofill-note">~auto</div>':''}</td>
+      <td style="font-size:13px">${icon}</td>`;
+    tbody.appendChild(tr);
+  });
+
+  if (state.hasCacheCouvette) {
+    const sep=document.createElement('tr');
+    sep.innerHTML=`<td colspan="5" style="background:rgba(201,168,76,0.15);color:#8a6800;font-weight:700;font-size:10px;padding:5px 9px">CACHE COUETTE</td>`;
+    tbody.appendChild(sep);
+    state.ccResults.forEach((row,i) => {
+      const tr=document.createElement('tr');
+      tr.className='cc-row';
+      tr.innerHTML=`<td class="row-label">${row.type}</td>
+        <td><input class="editable-cell" type="number" value="${row.E??''}" onchange="updateCCCell(${i},'E',this.value)" placeholder="—"></td>
+        <td><input class="editable-cell" type="number" value="${row.S??''}" onchange="updateCCCell(${i},'S',this.value)" placeholder="—"></td>
+        <td><input class="editable-cell" type="number" value="${row.R??''}" onchange="updateCCCell(${i},'R',this.value)" placeholder="—"></td>
+        <td>✏️</td>`;
+      tbody.appendChild(tr);
+    });
+  }
+}
+
+function cd(c) {
+  if(!c) return '';
+  const cls=c>=CONF_HIGH?'conf-high':c>=CONF_MED?'conf-med':'conf-low';
+  return `<span class="conf-dot ${cls}" title="${Math.round(c)}%"></span>`;
+}
+
+function renderQualityBar() {
+  const q=state.scanQuality;
+  const cls=q>=75?'good':q>=50?'medium':'poor';
+  const lbl=q>=75?'🟢 Bonne qualité':q>=50?'🟡 Qualité moyenne':'🔴 Qualité faible';
+  document.getElementById('scanQualityBar').innerHTML=`
+    <div class="quality-bar-wrap ${cls}">
+      <span style="font-weight:600">${lbl}</span>
+      <div class="quality-bar"><div class="quality-fill ${cls}" style="width:${q}%"></div></div>
+      <span style="font-family:'DM Mono',monospace;font-size:11px">${q}%</span>
+    </div>`;
+}
+
+function renderVerifyPanel() {
+  const section=document.getElementById('verifySection');
+  section.innerHTML='';
+  if (!state.verifMode || !state.currentResults.length) return;
+  const imgSrc=state.currentResults[0]?.imageUrl||'';
+  const suspects=state.currentResults.filter(r=>r.confE<CONF_MED||r.confS<CONF_MED||r.hasError||r.autoR);
+  const valsHtml=state.currentResults.map(r=>{
+    const low=r.confE<CONF_MED||r.confS<CONF_MED;
+    const cls=r.hasError?'has-error':r.autoR?'autofill':low?'low-conf':'';
+    return `<div class="verify-val-box ${cls}">
+      <div class="vl">${r.type}</div>
+      <div class="vv">E:${r.E??'?'}</div>
+      <div class="vv" style="font-size:10px">S:${r.S??'?'} R:${r.R??'?'}</div>
+    </div>`;
+  }).join('');
+  section.innerHTML=`<div class="verify-panel">
+    <div class="verify-header">✓ Vérification — ${state.verifCount}/${state.verifTotal}
+      ${suspects.length?`<span style="background:var(--danger);color:#fff;padding:2px 6px;border-radius:8px;font-size:10px">${suspects.length} suspect(s)</span>`:''}
+    </div>
+    <div class="verify-body">
+      <div class="verify-img-wrap" onclick="openZoom('${imgSrc}')">
+        <img class="verify-img" src="${imgSrc}" alt="">
+        <div class="verify-zoom-hint">🔍 Zoomer</div>
+      </div>
+      <div class="verify-vals-grid">${valsHtml}</div>
+      <div class="verify-actions">
+        <button class="btn btn-success" onclick="confirmVerif()">✅ Confirmer</button>
+        <button class="btn btn-danger"  onclick="rejectVerif()">✗ Corriger</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderErrors() {
+  const s=document.getElementById('errorsSection'); s.innerHTML='';
+  const errs=state.currentResults.filter(r=>r.hasError);
+  const auto=state.currentResults.filter(r=>r.autoR);
+  if(errs.length) s.innerHTML+=`<div class="alert alert-danger">⚠️ <div><strong>${errs.length} incohérence(s)</strong><br>${errs.map(e=>`${e.type}: ${e.errorMsg}`).join('<br>')}</div></div>`;
+  if(auto.length) s.innerHTML+=`<div class="alert alert-warning">~ R calculé pour: ${auto.map(r=>r.type).join(', ')}</div>`;
+}
+
+function updateCell(i,col,val){
+  const n=val===''?null:parseInt(val,10);
+  state.currentResults[i][col]=isNaN(n)?null:n;
+  if(col!=='R')state.currentResults[i].autoR=false;
+  const r=state.currentResults[i];
+  if(!r.isRetour&&r.E!==null&&r.S!==null&&r.R!==null){
+    r.hasError=r.E!==r.S+r.R; r.errorMsg=r.hasError?`E(${r.E})≠S(${r.S})+R(${r.R})`:'';
+  }
+  renderErrors();
+}
+function updateCCCell(i,col,val){const n=val===''?null:parseInt(val,10);if(!isNaN(n))state.ccResults[i][col]=n;}
+
+// ═══════════════════════════════════════════════════
+// VERIFICATION
+// ═══════════════════════════════════════════════════
+function confirmVerif(){
+  state.verifCount++;
+  if(state.verifCount>=state.verifTotal){
+    state.verifMode=false;
+    document.getElementById('verifPanel').style.display='none';
+    document.getElementById('verifBadge').classList.remove('visible');
+    setTimeout(()=>alert('✅ Calibration terminée ! Le système signalera uniquement les valeurs suspectes.'),300);
+    saveState();
+  }
+  updateVerifUI();
+  document.getElementById('verifySection').innerHTML=`<div class="alert alert-success">✅ Confirmé — ${state.verifCount}/${state.verifTotal}</div>`;
+  saveState();
+}
+function rejectVerif(){
+  document.getElementById('verifySection').innerHTML=`<div class="alert alert-warning">✏️ Corrigez le tableau puis enregistrez.</div>`;
+}
+function updateVerifUI(){
+  const pct=Math.min(100,(state.verifCount/state.verifTotal)*100);
+  document.getElementById('verifBar').style.width=pct+'%';
+  document.getElementById('verifStats').textContent=`${state.verifCount}/${state.verifTotal} vérifications`;
+  if(!state.verifMode){document.getElementById('verifPanel').style.display='none';document.getElementById('verifBadge').classList.remove('visible');}
+  else document.getElementById('verifBadge').classList.add('visible');
+}
+
+// ═══════════════════════════════════════════════════
+// SAVE / MERGE / HISTORY / STATS / EXPORT
+// ═══════════════════════════════════════════════════
+function saveResults(){
+  const today=formatDate(new Date());
+  const entry={date:today,timestamp:new Date().toISOString(),
+    rows:state.currentResults.map(r=>({...r,imageUrl:''})),
+    ccRows:state.ccResults.map(r=>({...r,imageUrl:''})),
+    hasCacheCouvette:state.hasCacheCouvette,scanQuality:state.scanQuality};
+  const ei=state.history.findIndex(h=>h.date===today);
+  if(ei>=0) state.history[ei]=mergeEntries(state.history[ei],entry);
+  else state.history.unshift(entry);
+  saveState(); renderHistory(); renderStats();
+  document.getElementById('errorsSection').innerHTML=`<div class="alert alert-success">✅ Enregistré pour le ${today}</div>`;
+}
+function mergeEntries(ex,ne){
+  const m={...ex,rows:ex.rows.map(r=>({...r}))};
+  ne.rows.forEach(nr=>{const r=m.rows.find(x=>x.type===nr.type);if(r){r.E=sumVal(r.E,nr.E);r.S=sumVal(r.S,nr.S);r.R=sumVal(r.R,nr.R);}});
+  return m;
+}
+function sumVal(a,b){if(a===null&&b===null)return null;return(a||0)+(b||0);}
+
+function renderHistory(filter){
+  const list=document.getElementById('historyList');
+  let items=state.history;
+  if(filter)items=items.filter(h=>h.date===filter);
+  if(!items.length){list.innerHTML=`<div class="empty-state"><div class="empty-icon">📋</div><p>Aucun historique.</p></div>`;return;}
+  list.innerHTML=items.map(h=>{
+    const qi=state.history.indexOf(h);
+    return `<div class="history-item" onclick="showHistoryDetail(${qi})">
+      <div><div class="history-date">${h.date}</div>
+      <div class="history-meta">E:${sumRows(h.rows,'E')} · S:${sumRows(h.rows,'S')} · ${h.rows.filter(r=>r.hasError).length?'⚠️':'✅'}</div></div>
+      <span class="history-arrow">›</span></div>`;
+  }).join('');
+}
+function filterHistory(){const v=document.getElementById('historyFilter').value;if(v)renderHistory(formatDate(new Date(v+'T00:00:00')));}
+function clearFilter(){document.getElementById('historyFilter').value='';renderHistory();}
+function showHistoryDetail(idx){
+  const h=state.history[idx];if(!h)return;
+  document.getElementById('historyModalContent').innerHTML=`
+    <div class="card-title" style="margin-bottom:13px">📋 ${h.date}</div>
+    <div style="overflow-x:auto"><table class="result-table">
+      <thead><tr><th>Type</th><th>E</th><th>S</th><th>R</th></tr></thead>
+      <tbody>${h.rows.map(r=>`<tr><td class="row-label">${r.type}</td><td>${r.E??'—'}</td><td>${r.S??'—'}</td><td>${r.R??'—'}</td></tr>`).join('')}</tbody>
+    </table></div>
+    <div class="row mt-12">
+      <button class="btn btn-outline btn-sm" onclick="exportHistoryCSV(${idx})">📄 CSV</button>
+      <button class="btn btn-outline btn-sm" onclick="exportHistoryExcel(${idx})">📊 Excel</button>
+    </div>`;
+  document.getElementById('historyModal').classList.add('active');
+}
+function closeModal(){document.getElementById('historyModal').classList.remove('active');}
+
+function renderStats(){
+  const has=state.history.length>0;
+  document.getElementById('statsEmpty').style.display=has?'none':'block';
+  document.getElementById('statsContent').style.display=has?'block':'none';
+  if(!has)return;
+  const today=formatDate(new Date());
+  const tr=(state.history.find(h=>h.date===today)||{}).rows||[];
+  document.getElementById('statsTodayGrid').innerHTML=`
+    <div class="stat-box"><div class="sl">Entrée E</div><div class="sv">${sumRows(tr,'E')}</div></div>
+    <div class="stat-box gold-box"><div class="sl">Sortie S</div><div class="sv">${sumRows(tr,'S')}</div></div>
+    <div class="stat-box"><div class="sl">Reste R</div><div class="sv">${sumRows(tr,'R')}</div></div>`;
+  document.getElementById('statsTableBody').innerHTML=LINGE_TYPES.map(type=>{
+    const all=state.history.flatMap(h=>h.rows.filter(r=>r.type===type));
+    return `<tr><td class="row-label">${type}<br><span style="font-size:9px;font-weight:400;color:var(--text-light)">${LINGE_LABELS[type]}</span></td>
+      <td>${all.reduce((s,r)=>s+(r.E||0),0)}</td><td>${all.reduce((s,r)=>s+(r.S||0),0)}</td><td>${all.reduce((s,r)=>s+(r.R||0),0)}</td></tr>`;
+  }).join('');
+}
+function sumRows(rows,col){return rows.reduce((s,r)=>s+(r[col]||0),0);}
+
+function buildCSV(rows,date){'Date,Type,Libellé,E,S,R\n';return'Date,Type,Libellé,E,S,R\n'+rows.map(r=>`${date},${r.type},"${r.label||''}",${r.E??''},${r.S??''},${r.R??''}`).join('\n');}
+function dl(c,n,m){const b=new Blob([c],{type:m});const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(b),download:n});a.click();URL.revokeObjectURL(a.href);}
+function exportCSV(){dl(buildCSV(state.currentResults,formatDate(new Date())),`linge-${formatDate(new Date())}.csv`,'text/csv');}
+function exportExcel(){dl(buildCSV(state.currentResults,formatDate(new Date())),`linge-${formatDate(new Date())}.xls`,'application/vnd.ms-excel');}
+function exportHistoryCSV(i){const h=state.history[i];dl(buildCSV(h.rows,h.date),`linge-${h.date}.csv`,'text/csv');}
+function exportHistoryExcel(i){const h=state.history[i];dl(buildCSV(h.rows,h.date),`linge-${h.date}.xls`,'application/vnd.ms-excel');}
+function exportAllCSV(){const all=state.history.flatMap(h=>h.rows.map(r=>({...r,date:h.date})));dl('Date,Type,Libellé,E,S,R\n'+all.map(r=>`${r.date},${r.type},"${r.label||''}",${r.E??''},${r.S??''},${r.R??''}`).join('\n'),'linge-historique.csv','text/csv');}
+function exportAllExcel(){const all=state.history.flatMap(h=>h.rows.map(r=>({...r,date:h.date})));dl('Date,Type,Libellé,E,S,R\n'+all.map(r=>`${r.date},${r.type},"${r.label||''}",${r.E??''},${r.S??''},${r.R??''}`).join('\n'),'linge-historique.xls','application/vnd.ms-excel');}
+
+// ═══════════════════════════════════════════════════
+// ZOOM + UTILS
+// ═══════════════════════════════════════════════════
+function openZoom(src){document.getElementById('zoomImg').src=src;document.getElementById('zoomModal').classList.add('active');}
+function openZoomCanvas(){openZoom(document.getElementById('previewCanvas').toDataURL());}
+function closeZoom(){document.getElementById('zoomModal').classList.remove('active');}
+function showLoader(t,s){document.getElementById('loaderText').textContent=t;document.getElementById('loaderSub').textContent=s||'';document.getElementById('loader').classList.add('active');}
+function hideLoader(){document.getElementById('loader').classList.remove('active');document.getElementById('loaderConf').textContent='';}
+function formatDate(d){return d.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric'}).replace(/\//g,'-');}
+function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
+function loadScript(src){return new Promise((res,rej)=>{const s=document.createElement('script');s.src=src;s.onload=res;s.onerror=rej;document.head.appendChild(s);});}
+
+loadState();
+</script>
+</body>
+</html>
