@@ -781,27 +781,43 @@ async function runDetection() {
   // Smooth to remove noise
   const hSmooth = smoothArray(hRaw, 10);
 
-  // Auto-calibrate threshold based on image statistics
-  // Find the median projection value to set threshold adaptively
+  // Multi-threshold strategy: try progressively lower thresholds
+  // until we find enough rows (target: 4-8 rows for a 6-row sheet)
   const hSorted = [...hSmooth].sort((a,b) => a-b);
-  const hMedian = hSorted[Math.floor(hSorted.length/2)];
   const hMin    = hSorted[0];
-  const hMax    = hSorted[hSorted.length-1];
-  // Threshold = midpoint between min and median (catches whitespace gaps)
-  const hThresh = hMin + (hMedian - hMin) * 0.4;
+  const hMed    = hSorted[Math.floor(hSorted.length/2)];
+  const h25     = hSorted[Math.floor(hSorted.length*0.25)]; // 25th percentile
 
-  const hGaps = findGaps(hSmooth, hThresh, 10);
-  let hRegions = regionsFromGaps(hGaps, H, MIN_TABLE_HEIGHT);
+  let hGaps = [], hRegions = [], hThresh = 0;
+  // Try thresholds from tight to loose
+  const threshCandidates = [
+    hMin + (h25  - hMin) * 0.8,   // very tight
+    hMin + (h25  - hMin) * 0.5,   // tight
+    hMin + (hMed - hMin) * 0.35,  // medium
+    hMin + (hMed - hMin) * 0.25,  // loose
+    hMin + (hMed - hMin) * 0.15,  // very loose
+  ];
+
+  for (const thr of threshCandidates) {
+    const gaps = findGaps(hSmooth, thr, 8);
+    const regs = regionsFromGaps(gaps, H, MIN_TABLE_HEIGHT);
+    if (regs.length >= 4) {
+      hGaps = gaps; hRegions = regs; hThresh = thr;
+      break;
+    }
+    if (regs.length > hRegions.length) {
+      hGaps = gaps; hRegions = regs; hThresh = thr;
+    }
+  }
 
   const debugParts = [
     `W:${W} H:${H}`,
-    `hMin:${hMin.toFixed(3)} hMed:${hMedian.toFixed(3)} hThr:${hThresh.toFixed(3)}`,
-    `hGaps:${hGaps.length}`,
-    `hRows:${hRegions.length}`
+    `hMin:${hMin.toFixed(3)} hMed:${hMed.toFixed(3)} hThr:${hThresh.toFixed(3)}`,
+    `hGaps:${hGaps.length} hRows:${hRegions.length}`
   ];
 
-  // If horizontal detection fails, use equal vertical split
-  if (hRegions.length < 2) {
+  // Fallback if still not enough rows
+  if (hRegions.length < 3) {
     const rowH = Math.floor(H / 6);
     hRegions = Array.from({length:6}, (_,i) => ({ start:i*rowH, end:i===5?H:(i+1)*rowH }));
     debugParts.push('hFallback:6');
